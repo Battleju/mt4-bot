@@ -11,10 +11,10 @@
 // Inputs
 input int magic = 1;
 
-input int short_ma_period = 8;
+input int short_ma_period = 10;
 input int long_ma_period = 20;
 
-input double tp_point = 5000;
+input double tp_point = 500000;
 input double sl_point = 1000;
 
 input double lot = 0.1;
@@ -22,6 +22,7 @@ input double lot = 0.1;
 // Global variables
 int current_ticket = 0;
 int stop_level = 0;
+bool debounce = false;
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -57,12 +58,7 @@ void OnTick(){
    }
    
    Print(current_ticket);
-
-   if (current_ticket != 0){
-      Print("POSITION ALREADY OPEN");
-      return;
-   }
-  
+   
    double current_short_ma = iMA(NULL, PERIOD_CURRENT, short_ma_period, 0, MODE_SMA, PRICE_CLOSE, 0);
    double current_long_ma = iMA(NULL, PERIOD_CURRENT, long_ma_period, 0, MODE_SMA, PRICE_CLOSE, 0);
    
@@ -74,11 +70,36 @@ void OnTick(){
    
    Print("Current difference: ", difference);
    Print("Last difference: ", last_difference);
+
+   if (current_ticket != 0){
+      Print("POSITION ALREADY OPEN");
+      
+      
+      
+      if (difference > 0 && last_difference < 0){
+         // Long call
+         if (debounce == false){
+            OrderClose(current_ticket,lot,Bid,1000,Red);
+            Print("Closing a Short Position");
+         }
+      }else if (difference < 0 && last_difference > 0){
+         // Short call
+         if (debounce == false) {
+            OrderClose(current_ticket,lot,Ask,1000,Red);
+            Print("Closing a Long Position");
+         }
+      } else {
+         debounce = false;
+      }
+      return;
+   }
    
    if (difference > 0 && last_difference < 0){
       execLong();
+      debounce = true;
    }else if (difference < 0 && last_difference > 0){
       execShort();
+      debounce = true;
    }
 }
 
