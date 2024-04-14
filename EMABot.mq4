@@ -19,16 +19,26 @@ input double sl_point = 1000;
 
 input double lot = 0.1;
 
+input double max_equity_change = 300;
+
+input int start_time_hour = 13;
+input int start_time_minute = 0;
+input int end_time_hour = 21;
+input int end_time_minute = 55;
+
 // Global variables
 int current_ticket = 0;
 int stop_level = 0;
 bool debounce = false;
+bool is_long = false;
+double equity_begin = 0;
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
 int OnInit(){
    stop_level = (int)MarketInfo(Symbol(), MODE_STOPLEVEL);
+   equity_begin = AccountEquity();
    return(INIT_SUCCEEDED);
 }
 
@@ -58,6 +68,18 @@ void OnTick(){
    }
    
    Print(current_ticket);
+   
+   if (!timeFrameChecks() || !equityChecks()) {
+      Print("Not in activated time frame or equity too high/low! If there are any open positions they will be closed.");
+      if (current_ticket != 0){
+         if (is_long) {
+            OrderClose(current_ticket,lot,Bid,1000,Red);
+         } else {
+            OrderClose(current_ticket,lot,Ask,1000,Red);
+         }
+      }
+      return;  
+   }
    
    double current_short_ma = iMA(NULL, PERIOD_CURRENT, short_ma_period, 0, MODE_SMA, PRICE_CLOSE, 0);
    double current_long_ma = iMA(NULL, PERIOD_CURRENT, long_ma_period, 0, MODE_SMA, PRICE_CLOSE, 0);
@@ -123,4 +145,33 @@ void execLong(){
       current_ticket = 0;
    }
    Print("WENT LONG");
+}
+
+bool timeFrameChecks(){
+   int h = TimeHour(TimeCurrent());
+   int m = TimeMinute(TimeCurrent());
+   Print("current hour: ", h);
+   Print("current minute: ", m);
+   
+   bool start_time_check = false;
+   bool end_time_check = false;
+   
+   if (start_time_hour < h){
+      start_time_check = true;
+   }else if (start_time_hour == h && start_time_minute < m){
+      start_time_check = true;
+   }
+   
+   if (end_time_hour > h){
+      end_time_check = true;
+   }else if (end_time_hour == h && end_time_minute > m){
+      end_time_check = true;
+   }
+   
+   return (start_time_check && end_time_check);
+}
+
+bool equityChecks(){
+   double equity_diff = MathAbs(AccountEquity() - equity_begin);
+   return equity_diff < max_equity_change;
 }
