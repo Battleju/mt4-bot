@@ -21,7 +21,7 @@ input double lot = 0.1;
 
 input double max_equity_change = 300;
 
-input int start_time_hour = 13;
+input int start_time_hour = 1;
 input int start_time_minute = 0;
 input int end_time_hour = 21;
 input int end_time_minute = 55;
@@ -68,6 +68,10 @@ void OnTick(){
    }
    
    Print(current_ticket);
+   
+   if (!timeFrameChecks()){
+      equity_begin = AccountEquity();
+   }
    
    if (!timeFrameChecks() || !equityChecks()) {
       Print("Not in activated time frame or equity too high/low! If there are any open positions they will be closed.");
@@ -150,8 +154,6 @@ void execLong(){
 bool timeFrameChecks(){
    int h = TimeHour(TimeCurrent());
    int m = TimeMinute(TimeCurrent());
-   Print("current hour: ", h);
-   Print("current minute: ", m);
    
    bool start_time_check = false;
    bool end_time_check = false;
