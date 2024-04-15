@@ -104,7 +104,7 @@ void OnTick(){
    if (difference > 0 && last_difference < 0){
       
    }else if (difference < 0 && last_difference > 0){
-      execLong();
+      execShort();
    }
 }
 
