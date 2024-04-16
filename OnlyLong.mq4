@@ -20,6 +20,7 @@ input double sl_point = 1000;
 input double lot = 0.1;
 
 input double max_equity_change = 300;
+input double min_equity_change = -300;
 
 input int start_time_hour = 1;
 input int start_time_minute = 0;
@@ -155,6 +156,6 @@ bool timeFrameChecks(){
 }
 
 bool equityChecks(){
-   double equity_diff = MathAbs(AccountEquity() - equity_begin);
-   return equity_diff < max_equity_change;
+   double equity_diff = AccountEquity() - equity_begin;
+   return equity_diff < max_equity_change && equity_diff > min_equity_change;
 }
